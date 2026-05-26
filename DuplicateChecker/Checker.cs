@@ -1,8 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Unicode;
 
 namespace DuplicateChecker;
 
@@ -39,7 +36,7 @@ public class Checker
             if (group.Count() <= 1) continue;
             foreach (var f in group)
                 f.ComputeHash();
-            var groupByHash = group.GroupBy(f => f.Hash, new HashEqualityComparer());
+            var groupByHash = group.GroupBy(f => f.Hash!, new HashEqualityComparer());
 
             foreach (var f in groupByHash)
             {
@@ -51,30 +48,9 @@ public class Checker
 
         return Duplicates = result;
     }
-
-    private static readonly JsonSerializerOptions serializerOptions = new()
-    {
-        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-        WriteIndented = true
-    };
-    public void SaveResult()
-    {
-        var dupInfo = Duplicates.Select(f => new DuplicateSetInfo(f));
-        string json = JsonSerializer.Serialize(dupInfo, serializerOptions);
-        File.WriteAllText($"Result-{DateTime.Now.Millisecond}.json", json);
-    }
 }
 
-public class DuplicateSet(byte[] hash, FileInfo[] files)
-{
-    public byte[] Hash { get; } = hash;
-    public FileInfo[] Files { get; } = files;
-}
-public class DuplicateSetInfo(DuplicateSet set)
-{
-    public string Hash { get; } = BitConverter.ToString(set.Hash);
-    public string[] Files { get; } = [.. set.Files.Select(f => f.FullName)];
-}
+public record DuplicateSet(byte[] Hash, FileInfo[] Files);
 
 public class HaFile(FileInfo file)
 {
@@ -91,7 +67,7 @@ public class HaFile(FileInfo file)
     }
 }
 
-public class HashEqualityComparer : IEqualityComparer<byte[]?>
+public class HashEqualityComparer : IEqualityComparer<byte[]>
 {
     public bool Equals(byte[]? x, byte[]? y)
     {
@@ -99,12 +75,10 @@ public class HashEqualityComparer : IEqualityComparer<byte[]?>
         return x.SequenceEqual(y);
     }
 
-    public int GetHashCode([DisallowNull] byte[]? obj)
+    public int GetHashCode([DisallowNull] byte[] obj)
     {
-        if (obj == null) return 0;
         var hash = new HashCode();
-        foreach (var b in obj)
-            hash.Add(b);
+        hash.AddBytes(obj);
         return hash.ToHashCode();
     }
 }
