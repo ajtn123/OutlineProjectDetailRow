@@ -18,5 +18,5 @@ foreach (var item in Checker.Duplicates)
     Console.WriteLine(Convert.ToHexString(item.Hash));
 
     foreach (var i in item.Files)
-        Console.WriteLine($" - {i.FullName}");
+        Console.WriteLine($"  {i.FullName}");
 }
