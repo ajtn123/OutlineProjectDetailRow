@@ -20,52 +20,40 @@ public class Checker
 
     public List<DuplicateSet> Duplicates { get; private set; } = [];
 
-    public List<DuplicateSet> Check()
+    public void Check()
     {
-        var files = Dirs.SelectMany(d => d.GetFiles(SearchPattern, Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
+        var files = Dirs.SelectMany(d => d.EnumerateFiles(SearchPattern, Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
             .Where(f => (f.Attributes & FileAttributes.System) == 0)
-            .Distinct(new FileInfoEqualityComparer())
-            .Select(f => new HaFile(f));
+            .Distinct(new FileInfoEqualityComparer());
 
-        var groupByLength = files.GroupBy(f => f.Length);
+        var lengthGroups = files.GroupBy(f => f.Length);
 
         List<DuplicateSet> result = [];
 
-        foreach (var group in groupByLength)
+        foreach (var lengthGroup in lengthGroups)
         {
-            if (group.Count() <= 1) continue;
-            foreach (var f in group)
-                f.ComputeHash();
-            var groupByHash = group.GroupBy(f => f.Hash!, new HashEqualityComparer());
+            if (lengthGroup.Count() == 1) continue;
 
-            foreach (var f in groupByHash)
+            var hashGroups = lengthGroup.GroupBy(ComputeHash, new HashEqualityComparer());
+
+            foreach (var hashGroup in hashGroups)
             {
-                if (f.Count() <= 1) continue;
+                if (hashGroup.Count() == 1) continue;
 
-                result.Add(new DuplicateSet(f.Key ?? [], [.. f.Select(f => f.FileInfo)]));
+                result.Add(new(hashGroup.Key, [..hashGroup]));
             }
         }
+    }
 
-        return Duplicates = result;
+    private static readonly SHA256 sha256 = SHA256.Create();
+    public byte[] ComputeHash(FileInfo file)
+    {
+        using var fs = file.OpenRead();
+        return sha256.ComputeHash(fs);
     }
 }
 
 public record DuplicateSet(byte[] Hash, FileInfo[] Files);
-
-public class HaFile(FileInfo file)
-{
-    private static readonly SHA256 S256 = SHA256.Create();
-    public FileInfo FileInfo { get; } = file;
-    public long Length { get; } = file.Length;
-    public byte[]? Hash { get; private set; }
-
-
-    public byte[] ComputeHash()
-    {
-        using var fs = FileInfo.OpenRead();
-        return Hash = S256.ComputeHash(fs);
-    }
-}
 
 public class HashEqualityComparer : IEqualityComparer<byte[]>
 {
