@@ -3,18 +3,11 @@ using System.Security.Cryptography;
 
 namespace DuplicateChecker;
 
-public class Checker
+public class Checker(string[] paths)
 {
-    public Checker(string[] paths, bool recursive = true, string pattern = "")
-    {
-        SearchPattern = pattern;
-        Recursive = recursive;
-        Paths = [.. paths.Select(s => s.Trim('"', ' ', '\'')).Where(Directory.Exists)];
-    }
-
-    public string[] Paths { get; }
-    public bool Recursive { get; }
-    public string SearchPattern { get; }
+    public string[] Paths { get; } = [.. paths.Select(s => s.Trim('"', ' ', '\'')).Where(Directory.Exists)];
+    public bool Recursive { get; set; } = true;
+    public string SearchPattern { get; set; } = "*";
 
     public List<DuplicateSet> Duplicates { get; private set; } = [];
 
@@ -26,28 +19,20 @@ public class Checker
             IgnoreInaccessible = true,
         })).Distinct().Select(fp => new FileInfo(fp));
 
-        var lengthGroups = files.GroupBy(file => file.Length);
+        var lengthGroups = files.GroupBy(file => file.Length).Where(group => group.Skip(1).Any());
 
-        foreach (var lengthGroup in lengthGroups)
+        Parallel.ForEach(lengthGroups, lengthGroup =>
         {
-            if (lengthGroup.Count() == 1) continue;
+            var hashGroups = lengthGroup.GroupBy(HashFile, new HashEqualityComparer()).Where(group => group.Skip(1).Any());
 
-            var hashGroups = lengthGroup.GroupBy(ComputeHash, new HashEqualityComparer());
-
-            foreach (var hashGroup in hashGroups)
-            {
-                if (hashGroup.Count() == 1) continue;
-
-                Duplicates.Add(new(hashGroup.Key, [..hashGroup]));
-            }
-        }
+            Duplicates.AddRange(hashGroups.Select(hashGroup => new DuplicateSet(hashGroup.Key, [.. hashGroup])));
+        });
     }
 
-    private static readonly SHA256 sha256 = SHA256.Create();
-    public byte[] ComputeHash(FileInfo file)
+    private static byte[] HashFile(FileInfo file)
     {
         using var fs = file.OpenRead();
-        return sha256.ComputeHash(fs);
+        return SHA256.HashData(fs);
     }
 }
 
