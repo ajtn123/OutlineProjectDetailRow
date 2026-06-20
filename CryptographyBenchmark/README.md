@@ -6,7 +6,7 @@ BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.8655/25H2/2025Update/HudsonValle
   DefaultJob : .NET 10.0.9 (10.0.9, 10.0.926.27113), X64 RyuJIT x86-64-v4
 ```
 
-| Method | DataLength | Mean           | Error        | StdDev       |
+| Method | DataLength |           Mean |        Error |       StdDev |
 |--------|-----------:|---------------:|-------------:|-------------:|
 | M5     |       1024 |     1,842.7 ns |      9.09 ns |      8.50 ns |
 | S1     |       1024 |     1,705.7 ns |     17.97 ns |     16.81 ns |
