@@ -8,7 +8,7 @@ foreach (var set in checker.Enumerate(args))
     Console.WriteLine();
     Console.WriteLine(Convert.ToHexString(set.Hash));
     foreach (var file in set.Files)
-        Console.WriteLine($"  {file.FullName}");
+        Console.WriteLine($"  {Path.GetRelativePath(".", file.FullName)}");
 }
 
 Console.WriteLine();
