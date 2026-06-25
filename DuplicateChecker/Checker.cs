@@ -3,33 +3,29 @@ using System.Security.Cryptography;
 
 namespace DuplicateChecker;
 
-public class Checker(string[] paths)
+public class Checker
 {
-    public string[] Paths { get; } = [.. paths.Select(s => s.Trim('"', ' ', '\'')).Where(Directory.Exists)];
-    public bool Recursive { get; set; } = true;
     public string SearchPattern { get; set; } = "*";
-
-    public List<DuplicateSet> Duplicates { get; private set; } = [];
-
-    public void Check()
+    public EnumerationOptions EnumerationOptions { get; set; } = new()
     {
-        var files = Paths.SelectMany(path => Directory.EnumerateFiles(path, SearchPattern, new EnumerationOptions
-        {
-            RecurseSubdirectories = Recursive,
-            IgnoreInaccessible = true,
-        })).Distinct().Select(fp => new FileInfo(fp));
+        RecurseSubdirectories = true,
+        IgnoreInaccessible = true,
+    };
 
-        var lengthGroups = files.GroupBy(file => file.Length).Where(group => group.Skip(1).Any());
+    public IEnumerable<DuplicateSet> Enumerate(string[] directories) => directories
+        .Select(s => s.Trim('"', '\'', ' '))
+        .Where(Directory.Exists)
+        .SelectMany(path => Directory.EnumerateFiles(path, SearchPattern, EnumerationOptions))
+        .Distinct()
+        .Select(fp => new FileInfo(fp))
+        .GroupBy(file => file.Length)
+        .Where(group => group.Skip(1).Any())
+        .SelectMany(group => group
+            .GroupBy(Hash, new HashEqualityComparer())
+            .Where(group => group.Skip(1).Any()))
+        .Select(hashGroup => new DuplicateSet(hashGroup.Key, [.. hashGroup]));
 
-        Parallel.ForEach(lengthGroups, lengthGroup =>
-        {
-            var hashGroups = lengthGroup.GroupBy(HashFile, new HashEqualityComparer()).Where(group => group.Skip(1).Any());
-
-            Duplicates.AddRange(hashGroups.Select(hashGroup => new DuplicateSet(hashGroup.Key, [.. hashGroup])));
-        });
-    }
-
-    private static byte[] HashFile(FileInfo file)
+    private static byte[] Hash(FileInfo file)
     {
         using var fs = file.OpenRead();
         return SHA256.HashData(fs);

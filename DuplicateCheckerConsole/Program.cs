@@ -1,22 +1,15 @@
-﻿if (args.Length <= 0)
+﻿var checker = new DuplicateChecker.Checker();
+
+int sets = 0, files = 0;
+foreach (var set in checker.Enumerate(args))
 {
-    Console.WriteLine("Pass at least one directory as argument.");
-    return;
-}
+    sets++; files += set.Files.Length;
 
-var Checker = new DuplicateChecker.Checker(args);
-
-Console.Write("Started. ");
-
-Checker.Check();
-
-Console.WriteLine($"Finished. Found {Checker.Duplicates.Count} Matches.");
-
-foreach (var item in Checker.Duplicates)
-{
     Console.WriteLine();
-    Console.WriteLine(Convert.ToHexString(item.Hash));
-
-    foreach (var i in item.Files)
-        Console.WriteLine($"  {i.FullName}");
+    Console.WriteLine(Convert.ToHexString(set.Hash));
+    foreach (var file in set.Files)
+        Console.WriteLine($"  {file.FullName}");
 }
+
+Console.WriteLine();
+Console.WriteLine($"Found {files} files in {sets} groups.");
