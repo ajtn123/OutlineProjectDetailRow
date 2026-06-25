@@ -1,15 +1,27 @@
 ﻿var checker = new DuplicateChecker.Checker();
 
-int sets = 0, files = 0;
-foreach (var set in checker.Enumerate(args))
+int groups = 0, files = 0;
+foreach (var group in checker.Enumerate(args))
 {
-    sets++; files += set.Files.Length;
+    groups++;
+    Write($"[{groups}]", ConsoleColor.Green);
+    Write($"[{Convert.ToHexString(group.Key)}]", ConsoleColor.DarkGray);
+    Console.WriteLine();
+
+    foreach (var file in group)
+    {
+        files++;
+        Console.WriteLine(Path.GetRelativePath(".", file.FullName));
+    }
 
     Console.WriteLine();
-    Console.WriteLine(Convert.ToHexString(set.Hash));
-    foreach (var file in set.Files)
-        Console.WriteLine($"  {Path.GetRelativePath(".", file.FullName)}");
 }
 
-Console.WriteLine();
-Console.WriteLine($"Found {files} files in {sets} groups.");
+Console.WriteLine($"Found {files} files in {groups} groups.");
+
+static void Write(string message, ConsoleColor color)
+{
+    Console.ForegroundColor = color;
+    Console.Write(message);
+    Console.ResetColor();
+}

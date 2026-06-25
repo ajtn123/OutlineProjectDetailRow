@@ -12,7 +12,7 @@ public class Checker
         IgnoreInaccessible = true,
     };
 
-    public IEnumerable<DuplicateSet> Enumerate(string[] directories) => directories
+    public IEnumerable<IGrouping<byte[], FileInfo>> Enumerate(string[] directories) => directories
         .Select(s => s.Trim('"', '\'', ' '))
         .Where(Directory.Exists)
         .SelectMany(path => Directory.EnumerateFiles(path, SearchPattern, EnumerationOptions))
@@ -22,8 +22,7 @@ public class Checker
         .Where(group => group.Skip(1).Any())
         .SelectMany(group => group
             .GroupBy(Hash, new HashEqualityComparer())
-            .Where(group => group.Skip(1).Any()))
-        .Select(hashGroup => new DuplicateSet(hashGroup.Key, [.. hashGroup]));
+            .Where(group => group.Skip(1).Any()));
 
     private static byte[] Hash(FileInfo file)
     {
@@ -31,8 +30,6 @@ public class Checker
         return SHA256.HashData(fs);
     }
 }
-
-public record DuplicateSet(byte[] Hash, FileInfo[] Files);
 
 public class HashEqualityComparer : IEqualityComparer<byte[]>
 {
