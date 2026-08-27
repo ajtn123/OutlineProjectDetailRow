@@ -1,9 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
+﻿namespace DuplicateChecker;
 
-namespace DuplicateChecker;
-
-public class Checker
+public class Enumerator
 {
     public string SearchPattern { get; set; } = "*";
     public EnumerationOptions EnumerationOptions { get; set; } = new()
@@ -13,11 +10,9 @@ public class Checker
     };
 
     public IEnumerable<IGrouping<byte[], FileInfo>> Enumerate(string[] directories) => directories
-        .Select(s => s.Trim('"', '\'', ' '))
-        .Where(Directory.Exists)
-        .SelectMany(path => Directory.EnumerateFiles(path, SearchPattern, EnumerationOptions))
+        .SelectMany(directory => Directory.EnumerateFiles(directory, SearchPattern, EnumerationOptions))
         .Distinct()
-        .Select(fp => new FileInfo(fp))
+        .Select(file => new FileInfo(file))
         .GroupBy(file => file.Length)
         .Where(group => group.Skip(1).Any())
         .SelectMany(group => group
@@ -27,7 +22,7 @@ public class Checker
     private static byte[] Hash(FileInfo file)
     {
         using var fs = file.OpenRead();
-        return SHA256.HashData(fs);
+        return System.Security.Cryptography.SHA256.HashData(fs);
     }
 }
 
@@ -35,14 +30,9 @@ public class HashEqualityComparer : IEqualityComparer<byte[]>
 {
     public bool Equals(byte[]? x, byte[]? y)
     {
-        if (x == null || y == null) return false;
+        if (x is null || y is null) return false;
         return x.SequenceEqual(y);
     }
 
-    public int GetHashCode([DisallowNull] byte[] obj)
-    {
-        var hash = new HashCode();
-        hash.AddBytes(obj);
-        return hash.ToHashCode();
-    }
+    public int GetHashCode(byte[] obj) => BitConverter.ToInt32(obj);
 }

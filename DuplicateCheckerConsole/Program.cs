@@ -1,23 +1,23 @@
-﻿var checker = new DuplicateChecker.Checker();
+﻿var enumerator = new DuplicateChecker.Enumerator();
 
-int groups = 0, files = 0;
-foreach (var group in checker.Enumerate(args))
+int gi = 0, fi = 0;
+foreach (var group in enumerator.Enumerate(args is [] ? ["."] : args))
 {
-    groups++;
-    Write($"[{groups}]", ConsoleColor.Green);
-    Write($"[{Convert.ToHexString(group.Key)}]", ConsoleColor.DarkGray);
+    gi++;
+    Write($"[{gi}]", ConsoleColor.Green);
+    Write($"[{Convert.ToHexString(group.Key)}]", ConsoleColor.White);
     Console.WriteLine();
 
     foreach (var file in group)
     {
-        files++;
+        fi++;
         Console.WriteLine(Path.GetRelativePath(".", file.FullName));
     }
 
     Console.WriteLine();
 }
 
-Console.WriteLine($"Found {files} files in {groups} groups.");
+Console.WriteLine($"Found {fi} files in {gi} groups.");
 
 static void Write(string message, ConsoleColor color)
 {
