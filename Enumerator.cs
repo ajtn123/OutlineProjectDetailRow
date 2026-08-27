@@ -1,4 +1,4 @@
-﻿namespace DuplicateChecker;
+﻿namespace OutlineProjectDetailRow;
 
 public class Enumerator
 {

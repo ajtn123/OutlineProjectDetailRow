@@ -1,4 +1,4 @@
-﻿var enumerator = new DuplicateChecker.Enumerator();
+﻿var enumerator = new OutlineProjectDetailRow.Enumerator();
 
 int gi = 0, fi = 0;
 foreach (var group in enumerator.Enumerate(args is [] ? ["."] : args))

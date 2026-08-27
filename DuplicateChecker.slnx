@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="CryptographyBenchmark/CryptographyBenchmark.csproj" />
-  <Project Path="DuplicateChecker/DuplicateChecker.csproj" />
-  <Project Path="DuplicateCheckerConsole/DuplicateCheckerConsole.csproj" />
-</Solution>
